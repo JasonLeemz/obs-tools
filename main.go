@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"obs-tools/tools"
+	"github.com/JasonLeemz/obs-tools/tools"
 )
 
 func main() {
