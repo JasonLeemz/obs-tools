@@ -66,7 +66,7 @@ func ListVideoFiles(root string) ([]string, error) {
 			return nil
 		}
 		fmt.Println(strArr[l-2])
-		if _, ok := fileType[strArr[l-2]]; ok {
+		if _, ok := fileType[strArr[l-1]]; ok {
 			files = append(files, path)
 		}
 		return nil
