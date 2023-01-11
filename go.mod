@@ -1,4 +1,4 @@
-module awesomeProject
+module obs-tools
 
 go 1.19
 

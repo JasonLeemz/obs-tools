@@ -1,8 +1,8 @@
 package main
 
 import (
-	"awesomeProject/tools"
 	"fmt"
+	"obs-tools/tools"
 )
 
 func main() {
