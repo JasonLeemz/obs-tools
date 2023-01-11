@@ -42,6 +42,7 @@ func ListVideoFiles(root string) ([]string, error) {
 	files := make([]string, 0)
 	// 如果是单个文件直接返回
 	if !IsDir(root) {
+		fmt.Println("当前文件[", root, "]不是文件夹")
 		// 校验文件合法性
 		_, t, err := ExtractFileNameInfo(root)
 		if err != nil {
@@ -54,14 +55,17 @@ func ListVideoFiles(root string) ([]string, error) {
 		return files, nil
 	}
 
+	fmt.Println("开始遍历[", root, "]")
 	// 遍历文件夹
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 
 		strArr := strings.Split(path, ".")
+		fmt.Println(path, strArr)
 		l := len(strArr)
 		if l < 2 {
 			return nil
 		}
+		fmt.Println(strArr[l-2])
 		if _, ok := fileType[strArr[l-2]]; ok {
 			files = append(files, path)
 		}
