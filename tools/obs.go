@@ -129,12 +129,12 @@ func pushStream(filePath, movieName, rtmpUrl string) error {
 		cmdArguments = []string{
 			"-re", "-i", filePath,
 			//"-re", "-i", filePath,
-			"-c:v", "h264",
+			"-c:v", "libx264",
 			"-c:a", "copy",
 			"-b:a", "192k",
 			"-vf", "\"drawtext=text=" + movieName + ":x=10:y=10:fontsize=24:fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
-			"-f", "flv", "\"" + rtmpUrl + "\"",
+			"-f", "flv", rtmpUrl,
 		}
 	}
 
