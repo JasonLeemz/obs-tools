@@ -131,7 +131,7 @@ func pushStream(filePath, movieName, rtmpUrl string) error {
 			"-c:v", "libx264",
 			"-c:a", "copy",
 			"-b:a", "192k",
-			"-vf", "\"drawtext=fontfile=./resource/STHeiti_Medium.ttc: text=" + movieName + ":x=10:y=10:fontsize=10:fontcolor=white:shadowy=2\"",
+			"-vf", "\"drawtext=fontfile=./resource/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=10:fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
 			"-f", "flv", rtmpUrl,
 		}
