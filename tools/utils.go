@@ -90,10 +90,11 @@ func ExtractFileNameInfo(path string) (string, string, error) {
 	fileName := strArr[l-1]
 
 	// 提取出文件名(移除后缀扩展名)
-	fl := len(fileName)
+	fileNameCpy := []rune(fileName)
+	fl := len(fileNameCpy)
 	dotPosition := -1
 	for i := fl - 1; i >= 0; i-- {
-		if string(fileName[i]) == "." {
+		if string(fileNameCpy[i]) == "." {
 			dotPosition = i
 			break
 		}
@@ -106,9 +107,9 @@ func ExtractFileNameInfo(path string) (string, string, error) {
 	} else {
 		for i := 0; i < fl; i++ {
 			if i < dotPosition {
-				movieName += string(fileName[i])
+				movieName += string(fileNameCpy[i])
 			} else if i > dotPosition {
-				movieType += string(fileName[i])
+				movieType += string(fileNameCpy[i])
 			}
 		}
 	}
