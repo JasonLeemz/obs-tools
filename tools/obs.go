@@ -128,11 +128,10 @@ func pushStream(filePath, movieName, rtmpUrl string) error {
 		//ffmpeg -i input.mp4 -vf "drawtext=fontfile=simhei.ttf: text=‘技术是第一生产力’:x=10:y=10:fontsize=24:fontcolor=white:shadowy=2" output.mp4
 		cmdArguments = []string{
 			"-re", "-i", filePath,
-			//"-re", "-i", filePath,
 			"-c:v", "libx264",
 			"-c:a", "copy",
 			"-b:a", "192k",
-			"-vf", "\"drawtext=text=" + movieName + ":x=10:y=10:fontsize=24:fontcolor=white:shadowy=2\"",
+			"-vf", "\"drawtext=text=" + movieName + ":x=10:y=10:fontsize=12:fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
 			"-f", "flv", rtmpUrl,
 		}

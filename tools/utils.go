@@ -80,19 +80,38 @@ func ListVideoFiles(root string) ([]string, error) {
 // ExtractFileNameInfo 提取文件的名字和扩展名
 func ExtractFileNameInfo(path string) (string, string, error) {
 
-	strArr := strings.Split(path, "/")
-	l := len(strArr)
-	if l < 1 {
-		return "", "", errors.New(fmt.Sprintf("file path error:%s", path))
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "", "", errors.New("file path is empty")
 	}
 
+	strArr := strings.Split(path, "/")
+	l := len(strArr)
 	fileName := strArr[l-1]
-	fArr := strings.Split(fileName, ".")
-	if len(fArr) < 2 {
-		return "", "", errors.New(fmt.Sprintf("fileName error:%s", fileName))
+
+	// 提取出文件名(移除后缀扩展名)
+	fl := len(fileName)
+	dotPosition := -1
+	for i := fl - 1; i >= 0; i-- {
+		if string(fileName[i]) == "." {
+			dotPosition = i
+			break
+		}
 	}
-	movieName := fArr[0]
-	movieType := fArr[1]
-	fmt.Println(movieName)
+
+	movieName := ""
+	movieType := ""
+	if dotPosition == -1 {
+		movieName = fileName
+	} else {
+		for i := 0; i < fl; i++ {
+			if i < dotPosition {
+				movieName += string(fileName[i])
+			} else if i > dotPosition {
+				movieType += string(fileName[i])
+			}
+		}
+	}
+
 	return movieName, movieType, nil
 }
