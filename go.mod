@@ -1,6 +1,6 @@
 module github.com/JasonLeemz/obs-tools
 
-go 1.19
+go 1.18
 
 require github.com/AlecAivazis/survey/v2 v2.3.6
 
