@@ -175,6 +175,7 @@ func Push() error {
 	}
 
 	files, err := ListVideoFiles(rtmpData.VideoList)
+	fmt.Println(files)
 	if err != nil {
 		return err
 	}
@@ -270,10 +271,13 @@ func ReloadConfig(platform string) (*RtmpConfig, *RtmpData, error) {
 
 	cfg := &RtmpConfig{}
 	ok := false
-	if cfg, ok = mRtmp[platform]; !ok {
+	if platform, ok = mapRtpmPrefix[platform]; !ok {
 		return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
 	}
 
+	if cfg, ok = mRtmp[platform]; !ok {
+		return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
+	}
 	rtd := &RtmpData{
 		VideoList: cfg.VideoPath,
 		RtmpUrl:   cfg.RtmpUrl,

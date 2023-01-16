@@ -65,7 +65,13 @@ func ListVideoFiles(root string) ([]string, error) {
 func walkDir(root string, files []string) ([]string, error) {
 	// 遍历文件夹
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if path == root {
+			return nil
+		}
+
+		// 如果是文件夹，继续向下寻找
 		if IsDir(path) {
+			fmt.Println("path:", path)
 			fl, err := walkDir(path, files)
 			if err != nil {
 				return err
@@ -73,19 +79,19 @@ func walkDir(root string, files []string) ([]string, error) {
 
 			files = append(files, fl...)
 			return nil
-		} else {
-			strArr := strings.Split(path, ".")
-			fmt.Println(path, strArr)
-			l := len(strArr)
-			if l < 2 {
-				return nil
-			}
-			fmt.Println(strArr[l-2])
-			if _, ok := videoFileType[strArr[l-1]]; ok {
-				files = append(files, path)
-			}
+		}
+
+		strArr := strings.Split(path, ".")
+		fmt.Println(path, strArr)
+		l := len(strArr)
+		if l < 2 {
 			return nil
 		}
+		fmt.Println(strArr[l-2])
+		if _, ok := videoFileType[strArr[l-1]]; ok {
+			files = append(files, path)
+		}
+		return nil
 
 	})
 	if err != nil {
