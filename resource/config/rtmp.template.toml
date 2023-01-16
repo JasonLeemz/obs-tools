@@ -1,0 +1,15 @@
+# rtmp推流配置，配置以后会优先采用
+
+[kuaishou]
+enable = true # 不启用填入false
+rtmp_url = "rtmp://open-push.voip.yximgs.com/gifshow/kwai_actL_ol_act_10518362515_strL_origin?sign=63f70b01-15cd5adb10f19bd8ea87d7f36170a23a&ks_fix_ts" # 推流地址
+video_path = "/home/videos/obs/越狱兔 (2006)" # 支持文件夹或单个文件,最大支持3级目录
+show_title = true # 是否以文件名作为标题加入水印
+show_subtitle = false # 功能暂不可用
+
+[bilibili]
+enable = true
+rtmp_url = "rtmp://open-push.voip.yximgs.com/gifshow/kwai_actL_ol_act_10518362515_strL_origin?sign=63f70b01-15cd5adb10f19bd8ea87d7f36170a23a&ks_fix_ts"
+video_path = "/home/videos/obs/越狱兔 (2006)"
+show_title = true
+show_subtitle = false
