@@ -17,28 +17,29 @@ func IsDir(path string) bool {
 	return s.IsDir()
 }
 
+var videoFileType = map[string]bool{
+	"wmv":  true,
+	"asf":  true,
+	"asx":  true,
+	"rm":   true,
+	"rmvb": true,
+	"mpg":  true,
+	"mpeg": true,
+	"mpe":  true,
+	"3gp":  true,
+	"mov":  true,
+	"mp4":  true,
+	"m4v":  true,
+	"avi":  true,
+	"dat":  true,
+	"mkv":  true,
+	"flv":  true,
+	"vob":  true,
+}
+
 // ListVideoFiles 返回所给路径中所有媒体文件
 func ListVideoFiles(root string) ([]string, error) {
 
-	fileType := map[string]bool{
-		"wmv":  true,
-		"asf":  true,
-		"asx":  true,
-		"rm":   true,
-		"rmvb": true,
-		"mpg":  true,
-		"mpeg": true,
-		"mpe":  true,
-		"3gp":  true,
-		"mov":  true,
-		"mp4":  true,
-		"m4v":  true,
-		"avi":  true,
-		"dat":  true,
-		"mkv":  true,
-		"flv":  true,
-		"vob":  true,
-	}
 	files := make([]string, 0)
 	// 如果是单个文件直接返回
 	if !IsDir(root) {
@@ -48,7 +49,7 @@ func ListVideoFiles(root string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := fileType[t]; ok {
+		if _, ok := videoFileType[t]; ok {
 			files = append(files, root)
 		}
 
@@ -56,20 +57,36 @@ func ListVideoFiles(root string) ([]string, error) {
 	}
 
 	fmt.Println("开始遍历[", root, "]")
+
+	// 遍历文件夹
+	return walkDir(root, files)
+}
+
+func walkDir(root string, files []string) ([]string, error) {
 	// 遍历文件夹
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if IsDir(path) {
+			fl, err := walkDir(path, files)
+			if err != nil {
+				return err
+			}
 
-		strArr := strings.Split(path, ".")
-		fmt.Println(path, strArr)
-		l := len(strArr)
-		if l < 2 {
+			files = append(files, fl...)
+			return nil
+		} else {
+			strArr := strings.Split(path, ".")
+			fmt.Println(path, strArr)
+			l := len(strArr)
+			if l < 2 {
+				return nil
+			}
+			fmt.Println(strArr[l-2])
+			if _, ok := videoFileType[strArr[l-1]]; ok {
+				files = append(files, path)
+			}
 			return nil
 		}
-		fmt.Println(strArr[l-2])
-		if _, ok := fileType[strArr[l-1]]; ok {
-			files = append(files, path)
-		}
-		return nil
+
 	})
 	if err != nil {
 		return nil, err

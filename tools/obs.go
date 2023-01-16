@@ -257,8 +257,7 @@ type RtmpConfig struct {
 }
 
 func ReloadConfig(platform string) (*RtmpConfig, *RtmpData, error) {
-	//path := "./resource/config/rtmp.template.toml"
-	path := "/Users/limingze/GolandProjects/obstool/resource/config/rtmp.template.toml"
+	path := "./resource/config/rtmp.template.toml"
 	if _, err := os.Stat(path); err != nil {
 		return nil, nil, err
 	}
