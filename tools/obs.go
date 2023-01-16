@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/BurntSushi/toml"
-	_ "github.com/BurntSushi/toml"
 	"os"
 	"strings"
 )
 
 var mapRtpmPrefix = map[string]string{
-	"快手":   "kuaishou",
+	"快手":     "kuaishou",
 	"哔哩哔哩": "bilibili",
 }
 
@@ -26,18 +25,8 @@ func showMenu() (*RtmpData, error) {
 	// the questions to ask
 	var qs = []*survey.Question{
 		{
-			Name: "rtmptype",
-			Prompt: &survey.Select{
-				Message: "选择一个推流平台,回车键确认:",
-				Options: []string{
-					"快手",
-					"Bilibili",
-				},
-			},
-		},
-		{
-			Name:   "streamkey",
-			Prompt: &survey.Input{Message: "请输入直播码/串流密钥(Stream Key)"},
+			Name:   "rtmpurl",
+			Prompt: &survey.Input{Message: "请输入推流地址(服务器地址+串流密钥)"},
 		},
 		{
 			Name:   "videolist",
@@ -54,25 +43,12 @@ func showMenu() (*RtmpData, error) {
 				Default: "是",
 			},
 		},
-		//{
-		//	Name: "subtitle",
-		//	Prompt: &survey.Select{
-		//		Message: "是否将字幕文件合成进入影片,默认检索同名文件名并且扩展名为.srt的文件:",
-		//		Options: []string{
-		//			"是",
-		//			"否",
-		//		},
-		//		Default: "否",
-		//	},
-		//},
 	}
 
 	var answers = struct {
-		RtmpType  string `survey:"rtmptype"`  // survey 会默认匹配首字母小写的name
-		StreamKey string `survey:"streamkey"` // 或者你也可以用tag指定如何匹配
+		RtmpUrl   string `survey:"rtmpurl"`   // 或者你也可以用tag指定如何匹配
 		VideoList string `survey:"videolist"` // 如果类型不一致，survey会尝试转换
 		ShowTitle string `survey:"showtitle"` // 显示标题
-		Subtitle  string `survey:"subtitle"`  // 字幕
 	}{}
 
 	// 执行提问
@@ -81,38 +57,24 @@ func showMenu() (*RtmpData, error) {
 		return nil, err
 	}
 
-	rtmpType := strings.TrimSpace(answers.RtmpType)
-	streamKey := strings.TrimSpace(answers.StreamKey)
+	rtmpUrl := strings.TrimSpace(answers.RtmpUrl)
 	videoList := strings.TrimSpace(answers.VideoList)
 	showTitle := strings.TrimSpace(answers.ShowTitle)
-	subtitle := strings.TrimSpace(answers.Subtitle)
 
-	fmt.Println("rtmpType:", rtmpType)
-	fmt.Println("streamKey:", streamKey)
+	fmt.Println("streamKey:", rtmpUrl)
 	fmt.Println("videoList:", videoList)
 
-	if rtmpType == "" {
-		return nil, errors.New("rtmpType不能为空")
-	}
-	if streamKey == "" {
+	if rtmpUrl == "" {
 		return nil, errors.New("streamKey不能为空")
 	}
 	if videoList == "" {
 		return nil, errors.New("videoList不能为空")
 	}
 
-	rtmp := ""
-	ok := false
-	if rtmp, ok = mapRtpmPrefix[rtmpType]; !ok {
-		return nil, errors.New("所选平台当前不支持")
-	}
-	rtmpUrl := rtmp + streamKey
-
 	rtmpData := &RtmpData{
 		VideoList: videoList,
 		RtmpUrl:   rtmpUrl,
 		ShowTitle: showTitle,
-		Subtitle:  subtitle,
 	}
 	return rtmpData, nil
 }
@@ -162,8 +124,8 @@ func Push() error {
 	if err != nil {
 		return err
 	}
-	rtdCfg, rtd, err := ReloadConfig(rtmpType)
-	if rtdCfg.Enable == false {
+	rtmpCfg, rtd, err := ReloadConfig(rtmpType)
+	if rtmpCfg.Enable == false {
 		// 手动指定
 		rtmpData, err = showMenu()
 		if err != nil {
@@ -195,7 +157,7 @@ func Push() error {
 				}
 			}
 
-			err = pushStream(file, movieName, rtmpData.Subtitle, rtmpData.RtmpUrl)
+			err = pushStream(file, movieName, rtmpData, rtmpCfg)
 			if err != nil {
 				return err
 			}
@@ -205,34 +167,40 @@ func Push() error {
 	return nil
 }
 
-func pushStream(filePath, movieName, subtitle, rtmpUrl string) error {
+func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *RtmpConfig) error {
 
 	movieName = strings.TrimSpace(movieName)
 	//movieName = ""
 	cmdArguments := make([]string, 0)
 
 	filePath = fmt.Sprintf("%s%s%s", "\"", filePath, "\"")
-	rtmpUrl = fmt.Sprintf("%s%s%s", "\"", rtmpUrl, "\"")
+	rtmpData.RtmpUrl = fmt.Sprintf("%s%s%s", "\"", rtmpData.RtmpUrl, "\"")
+
+	acodec := "copy"
+	if rtmpConfig.FFMpegParams.ACodec != "" {
+		acodec = rtmpConfig.FFMpegParams.ACodec
+	}
+	
 	if movieName == "" {
 		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
 		cmdArguments = []string{
 			"-re", "-i", filePath,
 			"-c:v", "copy",
-			"-c:a", "copy",
+			"-c:a", acodec,
 			"-b:a", "192k",
 			"-strict", "-2",
-			"-f", "flv", rtmpUrl,
+			"-f", "flv", rtmpData.RtmpUrl,
 		}
 	} else {
 		//ffmpeg -i input.mp4 -vf "drawtext=fontfile=simhei.ttf: text=技术是第一生产力:x=10:y=10:fontsize=24:fontcolor=white:shadowy=2" output.mp4
 		cmdArguments = []string{
 			"-re", "-i", filePath,
 			"-c:v", "libx264",
-			"-c:a", "copy",
+			"-c:a", acodec,
 			"-b:a", "192k",
 			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=10:fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
-			"-f", "flv", rtmpUrl,
+			"-f", "flv", rtmpData.RtmpUrl,
 		}
 	}
 
@@ -250,11 +218,17 @@ func pushStream(filePath, movieName, subtitle, rtmpUrl string) error {
 
 // RtmpConfig Rtmp推流配置
 type RtmpConfig struct {
-	Enable       bool   `toml:"enable"`
-	RtmpUrl      string `toml:"rtmp_url"`
-	VideoPath    string `toml:"video_path"`
-	ShowTitle    bool   `toml:"show_title"`
-	ShowSubtitle bool   `toml:"show_subtitle"`
+	Enable       bool          `toml:"enable"`
+	RtmpUrl      string        `toml:"rtmp_url"`
+	VideoPath    string        `toml:"video_path"`
+	ShowTitle    bool          `toml:"show_title"`
+	ShowSubtitle bool          `toml:"show_subtitle"`
+	FFMpegParams *FFMpegParams `yaml:"ffmpeg"`
+}
+
+// FFMpegParams ffmpeg参数
+type FFMpegParams struct {
+	ACodec string `toml:"acodec"`
 }
 
 func ReloadConfig(platform string) (*RtmpConfig, *RtmpData, error) {
