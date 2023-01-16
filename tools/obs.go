@@ -180,7 +180,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	if rtmpConfig.FFMpegParams.ACodec != "" {
 		acodec = rtmpConfig.FFMpegParams.ACodec
 	}
-	
+
 	if movieName == "" {
 		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
 		cmdArguments = []string{
@@ -223,7 +223,7 @@ type RtmpConfig struct {
 	VideoPath    string        `toml:"video_path"`
 	ShowTitle    bool          `toml:"show_title"`
 	ShowSubtitle bool          `toml:"show_subtitle"`
-	FFMpegParams *FFMpegParams `yaml:"ffmpeg"`
+	FFMpegParams *FFMpegParams `toml:"ffmpeg"`
 }
 
 // FFMpegParams ffmpeg参数
