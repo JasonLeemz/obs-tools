@@ -10,7 +10,7 @@ import (
 )
 
 var mapRtpmPrefix = map[string]string{
-	"快手":     "kuaishou",
+	"快手":   "kuaishou",
 	"哔哩哔哩": "bilibili",
 }
 
@@ -174,7 +174,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	cmdArguments := make([]string, 0)
 
 	filePath = fmt.Sprintf("%s%s%s", "\"", filePath, "\"")
-	rtmpData.RtmpUrl = fmt.Sprintf("%s%s%s", "\"", rtmpData.RtmpUrl, "\"")
+	rtmpUrl := fmt.Sprintf("%s%s%s", "\"", rtmpData.RtmpUrl, "\"")
 
 	acodec := "copy"
 	if rtmpConfig.FFMpegParams.ACodec != "" {
@@ -189,7 +189,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 			"-c:a", acodec,
 			"-b:a", "192k",
 			"-strict", "-2",
-			"-f", "flv", rtmpData.RtmpUrl,
+			"-f", "flv", rtmpUrl,
 		}
 	} else {
 		//ffmpeg -i input.mp4 -vf "drawtext=fontfile=simhei.ttf: text=技术是第一生产力:x=10:y=10:fontsize=24:fontcolor=white:shadowy=2" output.mp4
@@ -200,7 +200,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 			"-b:a", "192k",
 			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=10:fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
-			"-f", "flv", rtmpData.RtmpUrl,
+			"-f", "flv", rtmpUrl,
 		}
 	}
 
