@@ -3,8 +3,9 @@ package tools
 import (
 	"errors"
 	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -59,45 +60,43 @@ func ListVideoFiles(root string) ([]string, error) {
 	fmt.Println("开始遍历[", root, "]")
 
 	// 遍历文件夹
-	return walkDir(root, files)
+	return walkDir(root)
 }
 
-func walkDir(root string, files []string) ([]string, error) {
-	// 遍历文件夹
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if path == root {
-			return nil
-		}
+// 遍历文件夹
+func walkDir(root string) ([]string, error) {
+	_, files, err := FileForEachComplete(root)
+	fmt.Println("files:", files)
+	return files, err
+}
 
-		// 如果是文件夹，继续向下寻找
-		if IsDir(path) {
-			fmt.Println("path:", path)
-			fl, err := walkDir(path, files)
-			if err != nil {
-				return err
+func FileForEachComplete(fileFullPath string) ([]fs.FileInfo, []string, error) {
+	files, err := ioutil.ReadDir(fileFullPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	var myFile []fs.FileInfo
+	var sFiles []string
+	for _, file := range files {
+		if file.IsDir() {
+			path := strings.TrimSuffix(fileFullPath, "/") + "/" + file.Name()
+			subFile, _, _ := FileForEachComplete(path)
+			if len(subFile) > 0 {
+				myFile = append(myFile, subFile...)
+			}
+		} else {
+			fn := file.Name()
+			strArr := strings.Split(fn, ".")
+			l := len(strArr)
+			if _, ok := videoFileType[strArr[l-1]]; ok {
+				myFile = append(myFile, file)
+				fp := strings.TrimSuffix(fileFullPath, "/") + "/" + fn
+				sFiles = append(sFiles, fp)
 			}
 
-			files = append(files, fl...)
-			return nil
 		}
-
-		strArr := strings.Split(path, ".")
-		fmt.Println(path, strArr)
-		l := len(strArr)
-		if l < 2 {
-			return nil
-		}
-		fmt.Println(strArr[l-2])
-		if _, ok := videoFileType[strArr[l-1]]; ok {
-			files = append(files, path)
-		}
-		return nil
-
-	})
-	if err != nil {
-		return nil, err
 	}
-	return files, nil
+	return myFile, sFiles, nil
 }
 
 // ExtractFileNameInfo 提取文件的名字和扩展名
