@@ -2,5 +2,6 @@ go.sum
 .idea/
 .idea/*
 .DS_Store
+._.DS_Store
 *_test.go
 rtmp.template.toml

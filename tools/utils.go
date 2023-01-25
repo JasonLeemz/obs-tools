@@ -66,7 +66,6 @@ func ListVideoFiles(root string) ([]string, error) {
 // 遍历文件夹
 func walkDir(root string) ([]string, error) {
 	_, files, err := FileForEachComplete(root)
-	fmt.Println("files:", files)
 	return files, err
 }
 
@@ -80,12 +79,23 @@ func FileForEachComplete(fileFullPath string) ([]fs.FileInfo, []string, error) {
 	for _, file := range files {
 		if file.IsDir() {
 			path := strings.TrimSuffix(fileFullPath, "/") + "/" + file.Name()
-			subFile, _, _ := FileForEachComplete(path)
+			subFile, subFp, _ := FileForEachComplete(path)
 			if len(subFile) > 0 {
 				myFile = append(myFile, subFile...)
 			}
+			if len(subFp) > 0 {
+				sFiles = append(sFiles, subFp...)
+			}
 		} else {
 			fn := file.Name()
+
+			// 如果文件名最前面第一个字符是"." 则跳过
+			// 隐藏文件不记录
+			rfn := []rune(fn)
+			if string(rfn[0]) == "." {
+				continue
+			}
+
 			strArr := strings.Split(fn, ".")
 			l := len(strArr)
 			if _, ok := videoFileType[strArr[l-1]]; ok {
