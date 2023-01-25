@@ -89,7 +89,7 @@ func switchPlatform() (string, error) {
 				Options: []string{
 					"快手",
 					"哔哩哔哩",
-					"全部",
+					//"全部",
 				},
 			},
 		},
