@@ -2,14 +2,20 @@
 
 [kuaishou]
 enable = true
-rtmp_url = "rtmp://open-push.voip.yximgs.com/gifshow/xxxxx" # https://link.bilibili.com/p/center/index#/my-room/start-live 到这个地址申请
-video_path = "/home/videos/" # 支持文件夹或单个文件
+rtmp_url = "rtmp://open-push.voip.yximgs.com/gifshow/" # https://link.bilibili.com/p/center/index#/my-room/start-live 到这个地址申请
+video_path = "" # 支持文件夹或单个文件
 show_title = true
 show_subtitle = false # 功能暂不可用
+[kuaishou.ffmpeg]
+acodec = "aac" # 留空默认为copy
+vcodec = "libx264" # 留空默认为copy
 
 [bilibili]
 enable = true
-rtmp_url = "rtmp://open-push.voip.yximgs.com/gifshow/xxxxx" # https://studio.kuaishou.com/live/list
-video_path = "/home/videos/" # 支持文件夹或单个文件
+rtmp_url = "" # https://studio.kuaishou.com/live/list
+video_path = "" # 支持文件夹或单个文件
 show_title = true
 show_subtitle = false # 功能暂不可用
+[bilibili.ffmpeg]
+acodec = "aac" # 留空默认为copy
+vcodec = "libx264" # 留空默认为copy

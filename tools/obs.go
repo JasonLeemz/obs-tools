@@ -10,7 +10,7 @@ import (
 )
 
 var mapRtpmPrefix = map[string]string{
-	"快手":   "kuaishou",
+	"快手":     "kuaishou",
 	"哔哩哔哩": "bilibili",
 }
 
@@ -181,11 +181,17 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		acodec = rtmpConfig.FFMpegParams.ACodec
 	}
 
+	vcodec := "copy"
+	if rtmpConfig.FFMpegParams.VCodec != "" {
+		vcodec = rtmpConfig.FFMpegParams.VCodec
+	}
+
 	if movieName == "" {
 		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
 		cmdArguments = []string{
 			"-re", "-i", filePath,
-			"-c:v", "copy",
+			//"-c:v", "copy",
+			"-c:v", vcodec,
 			"-c:a", acodec,
 			"-b:a", "192k",
 			"-strict", "-2",
@@ -195,7 +201,8 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		//ffmpeg -i input.mp4 -vf "drawtext=fontfile=simhei.ttf: text=技术是第一生产力:x=10:y=10:fontsize=24:fontcolor=white:shadowy=2" output.mp4
 		cmdArguments = []string{
 			"-re", "-i", filePath,
-			"-c:v", "libx264",
+			//"-c:v", "libx264",
+			"-c:v", vcodec,
 			"-c:a", acodec,
 			"-b:a", "192k",
 			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=10:fontcolor=white:shadowy=2\"",
@@ -229,6 +236,7 @@ type RtmpConfig struct {
 // FFMpegParams ffmpeg参数
 type FFMpegParams struct {
 	ACodec string `toml:"acodec"`
+	VCodec string `toml:"vcodec"`
 }
 
 func ReloadConfig(platform string) (*RtmpConfig, *RtmpData, error) {
