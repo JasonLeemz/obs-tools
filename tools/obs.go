@@ -10,7 +10,7 @@ import (
 )
 
 var mapRtpmPrefix = map[string]string{
-	"快手":     "kuaishou",
+	"快手":   "kuaishou",
 	"哔哩哔哩": "bilibili",
 }
 
@@ -186,6 +186,11 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		vcodec = rtmpConfig.FFMpegParams.VCodec
 	}
 
+	fontsize := ""
+	if rtmpConfig.FFMpegParams.FontSize != "" {
+		fontsize = rtmpConfig.FFMpegParams.FontSize
+	}
+
 	if movieName == "" {
 		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
 		cmdArguments = []string{
@@ -205,7 +210,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 			"-c:v", vcodec,
 			"-c:a", acodec,
 			"-b:a", "192k",
-			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=10:fontcolor=white:shadowy=2\"",
+			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=" + fontsize + ":fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
 			"-f", "flv", rtmpUrl,
 		}
@@ -235,8 +240,9 @@ type RtmpConfig struct {
 
 // FFMpegParams ffmpeg参数
 type FFMpegParams struct {
-	ACodec string `toml:"acodec"`
-	VCodec string `toml:"vcodec"`
+	ACodec   string `toml:"acodec"`
+	VCodec   string `toml:"vcodec"`
+	FontSize string `toml:"font_size"`
 }
 
 func ReloadConfig(platform string) (*RtmpConfig, *RtmpData, error) {
