@@ -192,7 +192,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	}
 
 	if movieName == "" {
-		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
+		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k  -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
 		cmdArguments = []string{
 			"-re", "-i", filePath,
 			//"-c:v", "copy",
