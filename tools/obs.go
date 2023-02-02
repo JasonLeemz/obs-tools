@@ -189,16 +189,23 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	fontsize := ""
 	if rtmpConfig.FFMpegParams.FontSize != "" {
 		fontsize = rtmpConfig.FFMpegParams.FontSize
+	} else if rtmpConfig.FFMpegParams.FontSize == "" || rtmpConfig.FFMpegParams.FontSize == "0" {
+		// 如果为空 或者 为0，就不显示标题
+		// TODO 这里设置0好像不生效
+		movieName = ""
 	}
 
 	if movieName == "" {
 		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k  -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
 		cmdArguments = []string{
 			"-re", "-i", filePath,
+			"-preset", "ultrafast",
 			//"-c:v", "copy",
 			"-c:v", vcodec,
 			"-c:a", acodec,
-			"-b:a", "192k",
+			"-b:a", "92k",
+			"-b:v", "1500k",
+			"-g", "60",
 			"-strict", "-2",
 			"-f", "flv", rtmpUrl,
 		}
@@ -206,10 +213,13 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		//ffmpeg -i input.mp4 -vf "drawtext=fontfile=simhei.ttf: text=技术是第一生产力:x=10:y=10:fontsize=24:fontcolor=white:shadowy=2" output.mp4
 		cmdArguments = []string{
 			"-re", "-i", filePath,
+			"-preset", "ultrafast",
 			//"-c:v", "libx264",
 			"-c:v", vcodec,
 			"-c:a", acodec,
-			"-b:a", "192k",
+			"-b:a", "92k",
+			"-b:v", "1500k",
+			"-g", "60",
 			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=" + fontsize + ":fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
 			"-f", "flv", rtmpUrl,
@@ -221,10 +231,14 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	//	subtitleFile := movieName + ".srt"
 	//	cmdArguments = append(cmdArguments, "-i", subtitleFile)
 	//}
-	o, ok := ExecShell("ffmpeg", cmdArguments, "run.log")
+	out, ok := ExecShell("ffmpeg", cmdArguments)
 
-	fmt.Println(o, ok)
-
+	// 打日志
+	fmt.Println(out, ok)
+	//slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr)))
+	//slog.Info(out, "run result:", ok)
+	//slog.LogAttrs(slog.ErrorLevel, "oops",
+	//	slog.Int("status", 500), slog.Any("err", net.ErrClosed))
 	return nil
 }
 
