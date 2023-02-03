@@ -5,3 +5,4 @@ go.sum
 ._.DS_Store
 *_test.go
 rtmp.template.toml
+log/*.log

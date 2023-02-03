@@ -15,14 +15,14 @@ func Push() error {
 
 	// 加载推流配置
 	rtmpConfig, err := ReloadConfig()
-	logger.Sugar().Debug("rtmpConfig", rtmpConfig)
+	logger.Debug("rtmpConfig", rtmpConfig)
 	sjson, _ := json.Marshal(rtmpConfig)
-	logger.Sugar().Debug("rtmpConfig=", string(sjson))
+	logger.Debug("rtmpConfig=", string(sjson))
 
 	// 读取视频文件
 	files, err := ListVideoFiles(rtmpConfig.VideoPath)
 	totalFiles := len(files)
-	logger.Sugar().Debugf("共有 %d 个视频文件,videoFiles=%v", totalFiles, files)
+	logger.Debugf("共有 %d 个视频文件,videoFiles=%v", totalFiles, files)
 	if err != nil {
 		return err
 	}
@@ -40,18 +40,18 @@ func Push() error {
 		curr := 0
 		for _, file := range files {
 			curr++
-			logger.Sugar().Infof("当前播放第%d次循环中的第%d个,文件名:%s", currentLoop, curr, file)
+			logger.Infof("当前播放第%d次循环中的第%d个,文件名:%s", currentLoop, curr, file)
 			if rtmpConfig.ShowTitle == true {
 				movieName, _, err = ExtractFileNameInfo(file)
 				if err != nil {
-					logger.Sugar().Errorf(err.Error())
+					logger.Errorf(err.Error())
 					return err
 				}
 			}
 
 			output, err := pushStream(file, movieName, rtmpConfig)
 			if err != nil {
-				logger.Sugar().Errorw("pushStream", "output", output, "error", err.Error())
+				logger.Errorw("pushStream", "output", output, "error", err.Error())
 				return err
 			}
 		}
@@ -59,7 +59,7 @@ func Push() error {
 		// 判断循环次数
 		if loopCount != 0 && currentLoop >= loopCount {
 			msg := fmt.Sprintf("当前已经循环播放 [%d] 次，直播完成", currentLoop)
-			logger.Sugar().Infof(msg)
+			logger.Infof(msg)
 			break
 		}
 	}
@@ -70,7 +70,7 @@ func Push() error {
 func pushStream(filePath, movieName string, rtmpConfig *RtmpConfig) (string, error) {
 	// 初始化logger
 	logger := log.InitLogger()
-	logger.Sugar().Debug("filePath=", filePath, "rtmpConfig=", rtmpConfig)
+	logger.Debug("filePath=", filePath, "rtmpConfig=", rtmpConfig)
 
 	movieName = strings.TrimSpace(movieName)
 	cmdArguments := make([]string, 0)
@@ -130,11 +130,11 @@ func pushStream(filePath, movieName string, rtmpConfig *RtmpConfig) (string, err
 		}
 	}
 
-	logger.Sugar().Info("cmdArguments=", cmdArguments)
+	logger.Info("cmdArguments=", cmdArguments)
 	out, err := ExecShell("", cmdArguments)
 
 	// 打日志
-	logger.Sugar().Debugw("current file complete", "outPut=", out, "error=", err)
+	logger.Debugw("current file complete", "outPut=", out, "error=", err)
 	return out, err
 }
 

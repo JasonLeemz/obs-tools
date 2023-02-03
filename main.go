@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/JasonLeemz/obs-tools/core/log"
 	"github.com/JasonLeemz/obs-tools/tools"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -12,9 +10,9 @@ func main() {
 	logger := log.InitLogger()
 
 	err := tools.Push()
-	errStr := fmt.Sprintf("%v", err)
-	logger.Info("推送结果", zap.String("Push", errStr))
+	logger.Info("推送结果:", err)
 
+	defer logger.Sync() // 将 buffer 中的日志写到文件中
 }
 
 //

@@ -26,7 +26,7 @@ func ExecShell(commandName string, params []string) (string, error) {
 	}
 
 	logger := log.InitLogger()
-	logger.Sugar().Infow("ExecShell", "running=", scmd)
+	logger.Infow("ExecShell", "running=", scmd)
 
 	//函数返回一个*Cmd，用于使用给出的参数执行name指定的程序
 	cmd := exec.Command("/bin/bash", "-c", scmd)

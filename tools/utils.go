@@ -58,7 +58,7 @@ func ListVideoFiles(root string) ([]string, error) {
 		return files, nil
 	}
 	logger := log.InitLogger()
-	logger.Sugar().Debugf("开始遍历[%s]", root)
+	logger.Debugf("开始遍历[%s]", root)
 
 	// 遍历文件夹
 	return walkDir(root)
