@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
@@ -121,22 +122,7 @@ func Push() error {
 	rtmpData := &RtmpData{}
 	var err error
 
-	// 读取配置文件，如果不存在，就显示交互式菜单
-	rtmpType, err := switchPlatform()
-	if err != nil {
-		return err
-	}
-	rtmpCfg, rtd, err := ReloadConfig(rtmpType)
-	if rtmpCfg.Enable == false {
-		// 手动指定
-		rtmpData, err = showMenu()
-		if err != nil {
-			return err
-		}
-	} else {
-		// 从配置文件读取
-		rtmpData = rtd
-	}
+	rtmpCfg, _, err := ReloadConfig()
 
 	files, err := ListVideoFiles(rtmpData.VideoList)
 	fmt.Println(files)
@@ -204,10 +190,10 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		vcodec = rtmpConfig.FFMpegParams.VCodec
 	}
 
-	fontsize := ""
-	if rtmpConfig.FFMpegParams.FontSize != "" {
+	fontsize := int32(0)
+	if rtmpConfig.FFMpegParams.FontSize != 0 {
 		fontsize = rtmpConfig.FFMpegParams.FontSize
-	} else if rtmpConfig.FFMpegParams.FontSize == "" || rtmpConfig.FFMpegParams.FontSize == "0" {
+	} else if rtmpConfig.FFMpegParams.FontSize == 0 {
 		// 如果为空 或者 为0，就不显示标题
 		// TODO 这里设置0好像不生效
 		movieName = ""
@@ -230,6 +216,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		}
 	} else {
 		//ffmpeg -i input.mp4 -vf "drawtext=fontfile=simhei.ttf: text=技术是第一生产力:x=10:y=10:fontsize=24:fontcolor=white:shadowy=2" output.mp4
+		fsize := fmt.Sprintf("%d", fontsize)
 		cmdArguments = []string{
 			"ffmpeg",
 			"-re", "-i", filePath,
@@ -240,17 +227,11 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 			"-b:a", "92k",
 			"-b:v", "1500k",
 			"-g", "60",
-			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=" + fontsize + ":fontcolor=white:shadowy=2\"",
+			"-vf", "\"drawtext=fontfile=./resource/fonts/SourceHanSansCN-VF-2.otf: text=" + movieName + ":x=10:y=10:fontsize=" + fsize + ":fontcolor=white:shadowy=2\"",
 			"-strict", "-2",
 			"-f", "flv", rtmpUrl,
 		}
 	}
-
-	//// 合成字幕
-	//if subtitle == "是" && movieName != "" {
-	//	subtitleFile := movieName + ".srt"
-	//	cmdArguments = append(cmdArguments, "-i", subtitleFile)
-	//}
 
 	logger.Sugar().Info("construct=", cmdArguments)
 	out, err := ExecShell("", cmdArguments)
@@ -261,12 +242,14 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 }
 
 // RtmpConfig Rtmp推流配置
+type Stream map[string][]RtmpConfig
 type RtmpConfig struct {
+	Platform     string        `toml:"platform"`
 	Enable       bool          `toml:"enable"`
-	RtmpUrl      string        `toml:"rtmp_url"`
+	RtmpServer   string        `toml:"rtmp_server"`
+	StreamKey    string        `toml:"stream_key"`
 	VideoPath    string        `toml:"video_path"`
 	ShowTitle    bool          `toml:"show_title"`
-	ShowSubtitle bool          `toml:"show_subtitle"`
 	Loop         int32         `toml:"loop"`
 	FFMpegParams *FFMpegParams `toml:"ffmpeg"`
 }
@@ -275,45 +258,57 @@ type RtmpConfig struct {
 type FFMpegParams struct {
 	ACodec   string `toml:"acodec"`
 	VCodec   string `toml:"vcodec"`
-	FontSize string `toml:"font_size"`
+	FontSize int32  `toml:"font_size"`
 }
 
-func ReloadConfig(platform string) (*RtmpConfig, *RtmpData, error) {
+func ReloadConfig() (*RtmpConfig, *RtmpData, error) {
+	logger := log.InitLogger()
+
 	path := "./resource/config/rtmp.template.toml"
 	if _, err := os.Stat(path); err != nil {
 		return nil, nil, err
 	}
-	mRtmp := make(map[string]*RtmpConfig)
-	_, err := toml.DecodeFile(path, &mRtmp)
 
-	if err != nil {
-		return nil, nil, err
-	}
+	stream := Stream{}
+	_, err := toml.DecodeFile(path, &stream)
 
-	cfg := &RtmpConfig{}
-	ok := false
-	if platform, ok = mapRtpmPrefix[platform]; !ok {
-		return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
-	}
+	sjson, _ := json.Marshal(stream)
+	logger.Sugar().Debug("stream config=", string(sjson))
+	return nil, nil, err
 
-	if cfg, ok = mRtmp[platform]; !ok {
-		return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
-	}
-	rtd := &RtmpData{
-		VideoList: cfg.VideoPath,
-		RtmpUrl:   cfg.RtmpUrl,
-	}
-
-	// 标题水印
-	if cfg.ShowTitle {
-		rtd.ShowTitle = "是"
-	}
-
-	// 字幕
-	if cfg.ShowSubtitle {
-		rtd.Subtitle = "是"
-	}
-	return cfg, rtd, nil
+	//
+	//
+	//mRtmp := make(map[string]*RtmpConfig)
+	//_, err := toml.DecodeFile(path, &mRtmp)
+	//
+	//if err != nil {
+	//	return nil, nil, err
+	//}
+	//
+	//cfg := &RtmpConfig{}
+	//ok := false
+	//if platform, ok = mapRtpmPrefix[platform]; !ok {
+	//	return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
+	//}
+	//
+	//if cfg, ok = mRtmp[platform]; !ok {
+	//	return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
+	//}
+	//rtd := &RtmpData{
+	//	VideoList: cfg.VideoPath,
+	//	RtmpUrl:   cfg.RtmpUrl,
+	//}
+	//
+	//// 标题水印
+	//if cfg.ShowTitle {
+	//	rtd.ShowTitle = "是"
+	//}
+	//
+	//// 字幕
+	//if cfg.ShowSubtitle {
+	//	rtd.Subtitle = "是"
+	//}
+	//return cfg, rtd, nil
 }
 
 func WatchCommand() {
