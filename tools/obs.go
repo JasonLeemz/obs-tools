@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/BurntSushi/toml"
+	"github.com/JasonLeemz/obs-tools/core/log"
 	"os"
 	"strings"
 )
@@ -19,6 +20,7 @@ type RtmpData struct {
 	RtmpUrl   string `json:"rtmp_url,omitempty"`
 	ShowTitle string `json:"show_title,omitempty"`
 	Subtitle  string `json:"subtitle,omitempty"`
+	LoopCount int32  `json:"loop_count,omitempty"`
 }
 
 func showMenu() (*RtmpData, error) {
@@ -143,34 +145,50 @@ func Push() error {
 	}
 
 	totalFiles := len(files)
-	fmt.Println("共有", totalFiles, "个视频文件")
+
+	logger := log.InitLogger()
+	logger.Sugar().Infof("共有 %d 个视频文件", totalFiles)
+
+	// 读取配置，控制循环次数
+	loopCount := rtmpData.LoopCount
 	movieName := ""
 	for {
-		curr := 0
+		curr := int32(0)
 		for _, file := range files {
 			curr++
-			fmt.Println(fmt.Sprintf("当前播放第%d个,文件名:%s", curr, file))
+			logger.Sugar().Infof("当前播放第%d个,文件名:%s", curr, file)
 			if rtmpData.ShowTitle == "是" {
 				movieName, _, err = ExtractFileNameInfo(file)
 				if err != nil {
+					logger.Sugar().Errorf(err.Error())
 					return err
 				}
 			}
 
-			err = pushStream(file, movieName, rtmpData, rtmpCfg)
+			output, err := pushStream(file, movieName, rtmpData, rtmpCfg)
 			if err != nil {
+				logger.Sugar().Errorw("pushStream", "output", output, "error", err.Error())
 				return err
 			}
 		}
+
+		// 判断循环次数
+		if loopCount != 0 && curr >= loopCount {
+			msg := fmt.Sprintf("当前已经循环播放 [%d] 次，直播完成", curr)
+			logger.Sugar().Infof(msg)
+			break
+		}
 	}
 
-	return nil
+	return errors.New("播放完成")
 }
 
-func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *RtmpConfig) error {
+func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *RtmpConfig) (string, error) {
+	// 初始化logger
+	logger := log.InitLogger()
+	logger.Sugar().Debug("filePath=", filePath, "rtmpData=", rtmpData, "rtmpConfig=", rtmpConfig)
 
 	movieName = strings.TrimSpace(movieName)
-	//movieName = ""
 	cmdArguments := make([]string, 0)
 
 	filePath = fmt.Sprintf("%s%s%s", "\"", filePath, "\"")
@@ -198,6 +216,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	if movieName == "" {
 		//ffmpeg -re -i "mhls1.mp4" -c:v copy -c:a copy -b:a 192k  -strict -2 -f flv "rtmp://live-push.bilivideo.com/live-bvc/?streamname=xxx"
 		cmdArguments = []string{
+			"ffmpeg",
 			"-re", "-i", filePath,
 			"-preset", "ultrafast",
 			//"-c:v", "copy",
@@ -212,6 +231,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	} else {
 		//ffmpeg -i input.mp4 -vf "drawtext=fontfile=simhei.ttf: text=技术是第一生产力:x=10:y=10:fontsize=24:fontcolor=white:shadowy=2" output.mp4
 		cmdArguments = []string{
+			"ffmpeg",
 			"-re", "-i", filePath,
 			"-preset", "ultrafast",
 			//"-c:v", "libx264",
@@ -231,15 +251,13 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	//	subtitleFile := movieName + ".srt"
 	//	cmdArguments = append(cmdArguments, "-i", subtitleFile)
 	//}
-	out, ok := ExecShell("ffmpeg", cmdArguments)
+
+	logger.Sugar().Info("construct=", cmdArguments)
+	out, err := ExecShell("", cmdArguments)
 
 	// 打日志
-	fmt.Println(out, ok)
-	//slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr)))
-	//slog.Info(out, "run result:", ok)
-	//slog.LogAttrs(slog.ErrorLevel, "oops",
-	//	slog.Int("status", 500), slog.Any("err", net.ErrClosed))
-	return nil
+	logger.Sugar().Debugw("current file complete", "outPut=", out, "error=", err)
+	return out, err
 }
 
 // RtmpConfig Rtmp推流配置
@@ -249,6 +267,7 @@ type RtmpConfig struct {
 	VideoPath    string        `toml:"video_path"`
 	ShowTitle    bool          `toml:"show_title"`
 	ShowSubtitle bool          `toml:"show_subtitle"`
+	Loop         int32         `toml:"loop"`
 	FFMpegParams *FFMpegParams `toml:"ffmpeg"`
 }
 
