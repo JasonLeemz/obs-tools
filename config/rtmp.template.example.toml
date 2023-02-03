@@ -1,0 +1,26 @@
+# rtmp推流配置
+[[stream]]
+platform = "kuaishou"
+enable = true
+rtmp_server = "rtmp://open-push.voip.yximgs.com/gifshow/"
+stream_key = ""
+video_path = "/Movies/Videos/test" # 支持文件夹或单个文件
+show_title = true
+loop_count = 2 # 循环次数(0代表无限次)
+[stream.ffmpeg]
+acodec = "aac" # 留空默认为copy
+vcodec = "libx264" # 留空默认为copy
+font_size = 20
+
+[[stream]]
+platform = "bilibili"
+enable = false
+rtmp_server = "rtmp://open-push.voip.yximgs.com/gifshow/"
+stream_key = ""
+video_path = "/Movies/Videos/test" # 支持文件夹或单个文件
+show_title = true
+loop_count = 1 # 循环次数(0代表无限次)
+[stream.ffmpeg]
+acodec = "aac" # 留空默认为copy
+vcodec = "libx264" # 留空默认为copy
+font_size = 0

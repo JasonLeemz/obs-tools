@@ -4,146 +4,44 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/BurntSushi/toml"
 	"github.com/JasonLeemz/obs-tools/core/log"
 	"os"
 	"strings"
 )
 
-var mapRtpmPrefix = map[string]string{
-	"快手":   "kuaishou",
-	"哔哩哔哩": "bilibili",
-}
-
-type RtmpData struct {
-	VideoList string `json:"video_list,omitempty"`
-	RtmpUrl   string `json:"rtmp_url,omitempty"`
-	ShowTitle string `json:"show_title,omitempty"`
-	Subtitle  string `json:"subtitle,omitempty"`
-	LoopCount int32  `json:"loop_count,omitempty"`
-}
-
-func showMenu() (*RtmpData, error) {
-	// the questions to ask
-	var qs = []*survey.Question{
-		{
-			Name:   "rtmpurl",
-			Prompt: &survey.Input{Message: "请输入推流地址(服务器地址+串流密钥)"},
-		},
-		{
-			Name:   "videolist",
-			Prompt: &survey.Input{Message: "请输入需要推流的文件夹或文件路径"},
-		},
-		{
-			Name: "showtitle",
-			Prompt: &survey.Select{
-				Message: "是否在影片中加入文件名水印:",
-				Options: []string{
-					"是",
-					"否",
-				},
-				Default: "是",
-			},
-		},
-	}
-
-	var answers = struct {
-		RtmpUrl   string `survey:"rtmpurl"`   // 或者你也可以用tag指定如何匹配
-		VideoList string `survey:"videolist"` // 如果类型不一致，survey会尝试转换
-		ShowTitle string `survey:"showtitle"` // 显示标题
-	}{}
-
-	// 执行提问
-	err := survey.Ask(qs, &answers)
-	if err != nil {
-		return nil, err
-	}
-
-	rtmpUrl := strings.TrimSpace(answers.RtmpUrl)
-	videoList := strings.TrimSpace(answers.VideoList)
-	showTitle := strings.TrimSpace(answers.ShowTitle)
-
-	fmt.Println("streamKey:", rtmpUrl)
-	fmt.Println("videoList:", videoList)
-
-	if rtmpUrl == "" {
-		return nil, errors.New("streamKey不能为空")
-	}
-	if videoList == "" {
-		return nil, errors.New("videoList不能为空")
-	}
-
-	rtmpData := &RtmpData{
-		VideoList: videoList,
-		RtmpUrl:   rtmpUrl,
-		ShowTitle: showTitle,
-	}
-	return rtmpData, nil
-}
-
-func switchPlatform() (string, error) {
-	// the questions to ask
-	var qs = []*survey.Question{
-		{
-			Name: "rtmptype",
-			Prompt: &survey.Select{
-				Message: "选择一个推流平台,回车键确认:",
-				Options: []string{
-					"快手",
-					"哔哩哔哩",
-					//"全部",
-				},
-			},
-		},
-	}
-
-	var answers = struct {
-		RtmpType string `survey:"rtmptype"` // survey 会默认匹配首字母小写的name
-	}{}
-
-	// 执行提问
-	err := survey.Ask(qs, &answers)
-	if err != nil {
-		return "", err
-	}
-
-	rtmpType := strings.TrimSpace(answers.RtmpType)
-	fmt.Println("rtmpType:", rtmpType)
-
-	if rtmpType == "" {
-		return "", errors.New("rtmpType不能为空")
-	}
-
-	return rtmpType, nil
-}
-
 func Push() error {
-	rtmpData := &RtmpData{}
-	var err error
+	logger := log.InitLogger()
 
-	rtmpCfg, _, err := ReloadConfig()
+	// 加载推流配置
+	rtmpConfig, err := ReloadConfig()
+	logger.Sugar().Debug("rtmpConfig", rtmpConfig)
+	sjson, _ := json.Marshal(rtmpConfig)
+	logger.Sugar().Debug("rtmpConfig=", string(sjson))
 
-	files, err := ListVideoFiles(rtmpData.VideoList)
-	fmt.Println(files)
+	// 读取视频文件
+	files, err := ListVideoFiles(rtmpConfig.VideoPath)
+	totalFiles := len(files)
+	logger.Sugar().Debugf("共有 %d 个视频文件,videoFiles=%v", totalFiles, files)
 	if err != nil {
 		return err
 	}
 
-	totalFiles := len(files)
-
-	logger := log.InitLogger()
-	logger.Sugar().Infof("共有 %d 个视频文件", totalFiles)
-
-	// 读取配置，控制循环次数
-	loopCount := rtmpData.LoopCount
+	// 控制播放循环次数
+	loopCount := rtmpConfig.LoopCount
+	// 文件(视频标题)名称
 	movieName := ""
+	currentLoop := int32(0)
 	for {
-		curr := int32(0)
+		// 按照阅读习惯，将0初始化为第1次
+		currentLoop++
+
+		// 按照读取的顺序，开始推流
+		curr := 0
 		for _, file := range files {
 			curr++
-			logger.Sugar().Infof("当前播放第%d个,文件名:%s", curr, file)
-			if rtmpData.ShowTitle == "是" {
+			logger.Sugar().Infof("当前播放第%d次循环中的第%d个,文件名:%s", currentLoop, curr, file)
+			if rtmpConfig.ShowTitle == true {
 				movieName, _, err = ExtractFileNameInfo(file)
 				if err != nil {
 					logger.Sugar().Errorf(err.Error())
@@ -151,7 +49,7 @@ func Push() error {
 				}
 			}
 
-			output, err := pushStream(file, movieName, rtmpData, rtmpCfg)
+			output, err := pushStream(file, movieName, rtmpConfig)
 			if err != nil {
 				logger.Sugar().Errorw("pushStream", "output", output, "error", err.Error())
 				return err
@@ -159,8 +57,8 @@ func Push() error {
 		}
 
 		// 判断循环次数
-		if loopCount != 0 && curr >= loopCount {
-			msg := fmt.Sprintf("当前已经循环播放 [%d] 次，直播完成", curr)
+		if loopCount != 0 && currentLoop >= loopCount {
+			msg := fmt.Sprintf("当前已经循环播放 [%d] 次，直播完成", currentLoop)
 			logger.Sugar().Infof(msg)
 			break
 		}
@@ -169,16 +67,16 @@ func Push() error {
 	return errors.New("播放完成")
 }
 
-func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *RtmpConfig) (string, error) {
+func pushStream(filePath, movieName string, rtmpConfig *RtmpConfig) (string, error) {
 	// 初始化logger
 	logger := log.InitLogger()
-	logger.Sugar().Debug("filePath=", filePath, "rtmpData=", rtmpData, "rtmpConfig=", rtmpConfig)
+	logger.Sugar().Debug("filePath=", filePath, "rtmpConfig=", rtmpConfig)
 
 	movieName = strings.TrimSpace(movieName)
 	cmdArguments := make([]string, 0)
 
 	filePath = fmt.Sprintf("%s%s%s", "\"", filePath, "\"")
-	rtmpUrl := fmt.Sprintf("%s%s%s", "\"", rtmpData.RtmpUrl, "\"")
+	rtmpUrl := fmt.Sprintf("%s%s%s", "\"", rtmpConfig.PushUrl, "\"")
 
 	acodec := "copy"
 	if rtmpConfig.FFMpegParams.ACodec != "" {
@@ -195,7 +93,6 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		fontsize = rtmpConfig.FFMpegParams.FontSize
 	} else if rtmpConfig.FFMpegParams.FontSize == 0 {
 		// 如果为空 或者 为0，就不显示标题
-		// TODO 这里设置0好像不生效
 		movieName = ""
 	}
 
@@ -233,7 +130,7 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 		}
 	}
 
-	logger.Sugar().Info("construct=", cmdArguments)
+	logger.Sugar().Info("cmdArguments=", cmdArguments)
 	out, err := ExecShell("", cmdArguments)
 
 	// 打日志
@@ -241,8 +138,8 @@ func pushStream(filePath, movieName string, rtmpData *RtmpData, rtmpConfig *Rtmp
 	return out, err
 }
 
-// RtmpConfig Rtmp推流配置
-type Stream map[string][]RtmpConfig
+// Stream 推流配置
+type Stream map[string][]*RtmpConfig
 type RtmpConfig struct {
 	Platform     string        `toml:"platform"`
 	Enable       bool          `toml:"enable"`
@@ -250,8 +147,9 @@ type RtmpConfig struct {
 	StreamKey    string        `toml:"stream_key"`
 	VideoPath    string        `toml:"video_path"`
 	ShowTitle    bool          `toml:"show_title"`
-	Loop         int32         `toml:"loop"`
+	LoopCount    int32         `toml:"loop_count"`
 	FFMpegParams *FFMpegParams `toml:"ffmpeg"`
+	PushUrl      string
 }
 
 // FFMpegParams ffmpeg参数
@@ -261,54 +159,34 @@ type FFMpegParams struct {
 	FontSize int32  `toml:"font_size"`
 }
 
-func ReloadConfig() (*RtmpConfig, *RtmpData, error) {
-	logger := log.InitLogger()
+func ReloadConfig() (*RtmpConfig, error) {
 
-	path := "./resource/config/rtmp.template.toml"
+	path := "./config/rtmp.template.toml"
 	if _, err := os.Stat(path); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
+	// 解析配置文件
 	stream := Stream{}
 	_, err := toml.DecodeFile(path, &stream)
 
-	sjson, _ := json.Marshal(stream)
-	logger.Sugar().Debug("stream config=", string(sjson))
-	return nil, nil, err
+	if err != nil {
+		return nil, err
+	}
 
-	//
-	//
-	//mRtmp := make(map[string]*RtmpConfig)
-	//_, err := toml.DecodeFile(path, &mRtmp)
-	//
-	//if err != nil {
-	//	return nil, nil, err
-	//}
-	//
-	//cfg := &RtmpConfig{}
-	//ok := false
-	//if platform, ok = mapRtpmPrefix[platform]; !ok {
-	//	return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
-	//}
-	//
-	//if cfg, ok = mRtmp[platform]; !ok {
-	//	return nil, nil, errors.New(fmt.Sprintf("[%s] is unsupport", platform))
-	//}
-	//rtd := &RtmpData{
-	//	VideoList: cfg.VideoPath,
-	//	RtmpUrl:   cfg.RtmpUrl,
-	//}
-	//
-	//// 标题水印
-	//if cfg.ShowTitle {
-	//	rtd.ShowTitle = "是"
-	//}
-	//
-	//// 字幕
-	//if cfg.ShowSubtitle {
-	//	rtd.Subtitle = "是"
-	//}
-	//return cfg, rtd, nil
+	rtmpConfig := &RtmpConfig{}
+	for _, config := range stream["stream"] {
+		if config.Enable == false {
+			continue
+		}
+
+		rtmpConfig = config
+		rtmpConfig.PushUrl = config.RtmpServer + config.StreamKey // 拼接一下
+
+		return rtmpConfig, nil
+	}
+
+	return nil, nil
 }
 
 func WatchCommand() {
