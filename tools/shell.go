@@ -14,7 +14,8 @@ func Command(cmd string) error {
 	// bash -c "cmd string"
 	c := exec.Command("bash", "-c", cmd)
 	output, err := c.CombinedOutput()
-	fmt.Println(string(output))
+	logger := log.InitLogger()
+	logger.Infow("ExecShell", "output=", string(output))
 	return err
 }
 

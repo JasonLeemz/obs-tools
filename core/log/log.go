@@ -9,7 +9,7 @@ import (
 //声明日志类全局变量
 var sugarLogger *zap.SugaredLogger
 
-//日志类初始化方法
+// InitLogger 日志类初始化方法
 func InitLogger() *zap.SugaredLogger {
 
 	writeSyncer := getLogWriter()
