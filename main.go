@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/JasonLeemz/obs-tools/controller"
 	"github.com/JasonLeemz/obs-tools/core/log"
 	"io"
 	"net/http"
@@ -11,33 +12,33 @@ func main() {
 	//实例化日志类
 	logger := log.InitLogger()
 
-	//err := tools.Push()
-
-	http.HandleFunc("/test", doRequest)      //   设置访问路由
-	err := http.ListenAndServe(":8888", nil) //设置监听的端口
+	// 设置访问路由
+	http.HandleFunc("/", startServer)
+	http.HandleFunc("/push", controller.PushStream)
+	// 设置监听的端口
+	err := http.ListenAndServe(":8888", nil)
 	if err != nil {
 		logger.Fatal("ListenAndServe: ", err)
 		panic(err)
 	}
-	logger.Info("推送结果:", err)
 
 	defer logger.Sync() // 将 buffer 中的日志写到文件中
 }
 
-func doRequest(w http.ResponseWriter, r *http.Request) {
+func startServer(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm() //解析url传递的参数，对于POST则解析响应包的主体（request body）
 
 	fmt.Fprintf(w, "service start...") //这个写入到w的是输出到客户端的 也可以用下面的 io.WriteString对象
 
 	//注意:如果没有调用ParseForm方法，下面无法获取表单的数据
 	//query := r.URL.Query()
-	var uid string // 初始化定义变量
-	if r.Method == "GET" {
-		uid = r.FormValue("uid")
-	} else if r.Method == "POST" {
-		uid = r.PostFormValue("uid")
-	}
-	io.WriteString(w, "uid = "+uid)
+	//var uid string // 初始化定义变量
+	//if r.Method == "GET" {
+	//	uid = r.FormValue("uid")
+	//} else if r.Method == "POST" {
+	//	uid = r.PostFormValue("uid")
+	//}
+	io.WriteString(w, "service start...")
 }
 
 //
