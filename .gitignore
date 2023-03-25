@@ -6,3 +6,4 @@ go.sum
 *_test.go
 rtmp.template.toml
 log/*.log
+node_modules/*
