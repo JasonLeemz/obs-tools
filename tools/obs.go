@@ -64,6 +64,7 @@ func Push() error {
 		}
 	}
 
+	logger.Infof("播放完成")
 	return errors.New("播放完成")
 }
 
@@ -133,7 +134,7 @@ func pushStream(filePath, movieName string, rtmpConfig *RtmpConfig) (string, err
 	logger.Info("cmdArguments=", cmdArguments)
 	out, err := ExecShell("", cmdArguments)
 
-	// 打日志
+	// 日志
 	logger.Debugw("current file complete", "outPut=", out, "error=", err)
 	return out, err
 }

@@ -16,6 +16,7 @@ func main() {
 	http.HandleFunc("/", startServer)
 	http.HandleFunc("/push", controller.PushStream)
 	http.HandleFunc("/admin", controller.Admin)
+	http.HandleFunc("/index", controller.Admin)
 	// 设置监听的端口
 	err := http.ListenAndServe(":8888", nil)
 	if err != nil {
