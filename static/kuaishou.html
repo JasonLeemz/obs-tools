@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Promoter Company Account Create</title>
+    <!-- 引入 layui.css -->
+    <link rel="stylesheet" href="//unpkg.com/layui@2.6.8/dist/css/layui.css">
+    <style>
+        input::placeholder, textarea::placeholder {
+            color: #dddddd;
+        }
+    </style>
+</head>
+<body>
+<ul class="layui-nav" lay-filter="">
+    <li class="layui-nav-item"><a href="/admin/kuaishou">首页</a></li>
+    <li class="layui-nav-item layui-this"><a href="/admin/kuaishou">快手</a></li>
+    <li class="layui-nav-item"><a href="/admin/bilibili">Bilibili</a></li>
+    <li class="layui-nav-item"><a href="/admin/pdd">拼多多</a></li>
+</ul>
+<br>
+<form class="layui-form" action="/crs/company/add" method="post" lay-filter="btnSubmit">
+    <div class="layui-form-item">
+        <label class="layui-form-label">公司名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="company_name" required lay-verify="required" placeholder="company_name"
+                   autocomplete="on"
+                   class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">管理邮箱</label>
+        <div class="layui-input-block">
+            <input type="text" name="manager_email" required lay-verify="required" placeholder="manager_email"
+                   autocomplete="on"
+                   class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">公司标识</label>
+        <div class="layui-input-block">
+            <input type="text" name="company_identity" required lay-verify="required" placeholder="company_identity"
+                   autocomplete="on"
+                   class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">国家码</label>
+        <div class="layui-input-block">
+            <select name="country_code" lay-filter="product_id">
+                <option value="EG" selected="">EG-埃及</option>
+                <option value="SA">SA-沙特</option>
+                <option value="MX">MX-墨西哥</option>
+                <option value="BR">BR-巴西</option>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item layui-form-text">
+        <label class="layui-form-label">法律条款</label>
+        <div class="layui-input-block">
+            <textarea id="terms" name="terms" placeholder="" class="layui-textarea"></textarea>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" type="submit" lay-submit lay-filter="btnSubmit">提交</button>
+        </div>
+    </div>
+</form>
+
+<fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+    <legend>公司信息</legend>
+</fieldset>
+
+<table class="layui-table" lay-size="sm">
+    <colgroup>
+        <col width="150">
+        <col width="200">
+        <col>
+    </colgroup>
+    <thead>
+    <tr>
+        <th>id</th>
+        <th>country_code</th>
+        <th>company_name</th>
+        <th>manager_email</th>
+        <th>company_identity</th>
+        <th>terms</th>
+        <th>create_time</th>
+        <th>update_time</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range $idx, $c := .company}}
+    <tr>
+        <td>{{$c.ID}}</td>
+        <td>{{$c.CountryCode}}</td>
+        <td>{{$c.CompanyName}}</td>
+        <td>{{$c.ManagerEmail}}</td>
+        <td>{{$c.CompanyIdentity}}</td>
+        <td>{{$c.Terms}}</td>
+        <td>{{$c.CreateTime}}</td>
+        <td>{{$c.UpdateTime}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+<!-- 引入 layui.js -->
+<script src="//unpkg.com/layui@2.6.8/dist/layui.js"></script>
+<script>
+    layui.use(['layer', 'layedit', 'form'], function () {
+        var layer = layui.layer,
+            form = layui.form,
+            $ = layui.$;
+
+        var layedit = layui.layedit;
+        layedit.set({
+            // devmode: true
+            // //插入代码设置
+            // , codeConfig: {
+            //     hide: true,  //是否显示编码语言选择框
+            //     default: 'javascript' //hide为true时的默认语言格式
+            // }
+            tool: [
+                'strong', 'underline', 'del', 'addhr', '|', 'fontFomatt', 'colorpicker'
+                , '|', 'left', 'center', 'right', '|', 'link', 'unlink',
+                , '|', 'fullScreen'
+            ],
+            height: 200, //设置编辑器高度
+        });
+        layedit.build('terms');   //建立编辑器
+
+        $("form").submit(function (e) {
+            e.preventDefault()
+
+            let ticket = localStorage.getItem("_ticket")
+            $.ajax({
+                type: "POST",
+                dataType: "text",
+                url: $("form").prop("action"),//url
+                data: $("form").serialize() + "&ticket=" + ticket,
+                beforeSend: function () {
+                    $("button[type='submit']").attr("disabled", true);
+                },
+                success: function (result) {
+                    console.log(result);
+                    // let errInfo = JSON.stringify(result)
+                    layer.msg(result);
+                    $("button[type='submit']").attr("disabled", false);
+                },
+                error: function (result) {
+                    layer.msg(result);
+                }
+            });
+
+        });
+    });
+</script>
+</body>
+</html>

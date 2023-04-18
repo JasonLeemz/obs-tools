@@ -13,7 +13,7 @@ func main() {
 	logger := log.InitLogger()
 
 	// 设置访问路由
-	http.HandleFunc("/", startServer)
+	http.HandleFunc("/", controller.Admin)
 	http.HandleFunc("/push", controller.PushStream)
 	http.HandleFunc("/admin", controller.Admin)
 	http.HandleFunc("/index", controller.Admin)

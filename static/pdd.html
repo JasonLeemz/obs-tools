@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Token Reload</title>
+    <!-- 引入 layui.css -->
+    <link rel="stylesheet" href="//unpkg.com/layui@2.6.8/dist/css/layui.css">
+    <style>
+        input::placeholder, textarea::placeholder {
+            color: #dddddd;
+        }
+    </style>
+</head>
+<body>
+<ul class="layui-nav" lay-filter="">
+    <li class="layui-nav-item"><a href="/admin/kuaishou">首页</a></li>
+    <li class="layui-nav-item layui-this"><a href="/admin/kuaishou">快手</a></li>
+    <li class="layui-nav-item"><a href="/admin/bilibili">Bilibili</a></li>
+    <li class="layui-nav-item"><a href="/admin/pdd">拼多多</a></li>
+</ul>
+<br>
+<form class="layui-form" action="reload" method="post" lay-filter="btnSubmit">
+    <div class="layui-form-item layui-form-text">
+        <label class="layui-form-label">Token</label>
+        <div class="layui-input-block">
+            <textarea name="token" placeholder="" class="layui-textarea"></textarea>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" type="submit" lay-submit lay-filter="btnSubmit">提交</button>
+        </div>
+    </div>
+</form>
+
+<fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+    <legend>Token信息</legend>
+</fieldset>
+
+<table class="layui-table" lay-size="sm">
+    <colgroup>
+        <col width="150">
+        <col width="200">
+        <col>
+    </colgroup>
+    <thead>
+    <tr>
+        <th>token</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td id="token"></td>
+    </tr>
+    </tbody>
+</table>
+<!-- 引入 layui.js -->
+<script src="//unpkg.com/layui@2.6.8/dist/layui.js"></script>
+<script>
+    layui.use(['layer', 'form'], function () {
+        let ticket = localStorage.getItem("_ticket")
+
+        var layer = layui.layer,
+            form = layui.form,
+            $ = layui.$;
+
+        $("#token").text(ticket)
+        $("form").submit(function (e) {
+            e.preventDefault()
+
+            let ticket = $("textarea[name='token']").val()
+            localStorage.setItem('_ticket',ticket);
+
+            alert("ok!")
+            location.reload();
+
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+[http]
+# Listen ip:port, default ":8999"
+addr = ":8888"
+
+[redis]
+addrs = ["10.179.207.229:3000"]
+auth = ""
+
+# pool_size, max_con 根据qps 设置
+pool_size = 100
+max_con = 1000
+
+[mysql]
+dsn = "root:root@(mariadb.ybdx.xyz)/obs?timeout=5000ms&readTimeout=10000ms&writeTimeout=10000ms&charset=utf8&parseTime=true&loc=Local"
+host = "mariadb.ybdx.xyz:80"
