@@ -11,5 +11,5 @@ pool_size = 100
 max_con = 1000
 
 [mysql]
-dsn = "root:root@(mariadb.ybdx.xyz)/obs?timeout=5000ms&readTimeout=10000ms&writeTimeout=10000ms&charset=utf8&parseTime=true&loc=Local"
-host = "mariadb.ybdx.xyz:80"
+dsn = "root:root@(mariadb.ybdx.xyz:3306)/obs?timeout=5000ms&readTimeout=10000ms&writeTimeout=10000ms&charset=utf8&parseTime=true&loc=Local"
+host = "mariadb.ybdx.xyz:3306"
